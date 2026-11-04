@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Slang Time Machine</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Archivo:ital,wght@0,400;0,500;0,700;1,400&display=swap">
+<style>
+  /* Layout: one centered column; translator as two side-by-side panels that stack on phones; glossary table below. */
+  :root {
+    --bg: #eef2f5;
+    --panel: #ffffff;
+    --fg: #151b23;
+    --muted: #5b6774;
+    --line: #cdd6de;
+    --magenta: #d8197f;
+    --teal: #0d8f8a;
+    --mark: #ffe066;
+    --mark-fg: #2a2300;
+    --display: "Bungee", "Impact", "Arial Black", sans-serif;
+    --body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #111820; --panel: #1a232d; --fg: #edf1f5; --muted: #9aa8b5; --line: #2e3a46;
+      --magenta: #ff4fa8; --teal: #2fd0c8; --mark: #ffd83d; --mark-fg: #1d1800; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #111820; --panel: #1a232d; --fg: #edf1f5; --muted: #9aa8b5; --line: #2e3a46;
+    --magenta: #ff4fa8; --teal: #2fd0c8; --mark: #ffd83d; --mark-fg: #1d1800; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { color-scheme: light; }
+  body {
+    margin: 0;
+    background: var(--bg); color: var(--fg); font-family: var(--body); line-height: 1.5;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 28px 56px;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; display: grid; gap: 28px; }
+  header { display: grid; gap: 8px; }
+  h1 {
+    font-family: var(--display); font-size: clamp(1.7rem, 5vw, 2.8rem); line-height: 1.05; margin: 0;
+    text-wrap: balance; letter-spacing: .01em;
+  }
+  h1 .y90 { color: var(--magenta); }
+  h1 .y20 { color: var(--teal); }
+  .tag { color: var(--muted); max-width: 60ch; margin: 0; }
+
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .dir {
+    font-family: var(--display); font-size: .85rem; letter-spacing: .04em; border: 2px solid var(--fg);
+    background: var(--panel); color: var(--fg); padding: 10px 14px; cursor: pointer; border-radius: 4px;
+  }
+  .dir:hover { background: var(--mark); color: var(--mark-fg); }
+  .dir:focus-visible, textarea:focus-visible, input:focus-visible, .chip:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    font-size: .8rem; border: 1px solid var(--line); background: var(--panel); color: var(--fg);
+    padding: 6px 10px; border-radius: 999px; cursor: pointer;
+  }
+  .chip:hover { border-color: var(--magenta); color: var(--magenta); }
+
+  .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 680px) { .panels { grid-template-columns: 1fr; } }
+  .panel { background: var(--panel); border: 2px solid var(--fg); border-radius: 6px; min-width: 0; display: grid; grid-template-rows: auto 1fr; }
+  .panel.out { border-color: var(--teal); box-shadow: 6px 6px 0 var(--teal); }
+  .panel.in  { box-shadow: 6px 6px 0 var(--magenta); border-color: var(--magenta); }
+  .label {
+    font-family: var(--display); font-size: .72rem; letter-spacing: .08em; padding: 10px 14px;
+    border-bottom: 2px solid currentColor; color: inherit;
+  }
+  .in .label { color: var(--magenta); }
+  .out .label { color: var(--teal); }
+  textarea {
+    width: 100%; min-height: 180px; border: 0; background: transparent; color: var(--fg);
+    font: inherit; font-size: 1.05rem; padding: 14px; resize: vertical;
+  }
+  .result { padding: 14px; font-size: 1.05rem; min-height: 180px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .result:empty::before { content: "Your translation shows up here."; color: var(--muted); }
+  mark { background: var(--mark); color: var(--mark-fg); padding: 0 3px; border-radius: 3px; cursor: help; }
+  .count { color: var(--muted); font-size: .85rem; padding: 0 14px 12px; }
+
+  h2 { font-family: var(--display); font-size: 1.1rem; margin: 0 0 10px; letter-spacing: .03em; }
+  .filter { width: 100%; max-width: 320px; font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); color: var(--fg); margin-bottom: 12px; }
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); }
+  table { border-collapse: collapse; width: 100%; font-size: .93rem; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-family: var(--display); font-size: .68rem; letter-spacing: .08em; font-weight: 400; color: var(--muted); }
+  td.t90 { color: var(--magenta); font-weight: 700; white-space: nowrap; }
+  td.t20 { color: var(--teal); font-weight: 700; }
+  td.gloss { color: var(--muted); min-width: 220px; }
+  tr:last-child td { border-bottom: 0; }
+  @media (prefers-reduced-motion: no-preference) { .dir { transition: background .15s, color .15s; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1><span class="y90">'90s</span> slang &rarr; <span class="y20">2020s</span> slang</h1>
+    <p class="tag">Type how you talked in 1997 and read how it lands in 2026. Hover a highlighted word to see what it means. Flip the direction to go back in time.</p>
+  </header>
+
+  <div class="controls">
+    <button class="dir" id="flip" type="button" aria-live="polite">'90s &rarr; 2020s</button>
+    <div class="chips" id="chips" aria-label="Example sentences"></div>
+  </div>
+
+  <div class="panels">
+    <div class="panel in">
+      <div class="label" id="inLabel">YOU, IN THE '90s</div>
+      <textarea id="src" spellcheck="false" aria-label="Text to translate">Yo, that movie was da bomb! My homie thought it was whack but he's buggin'. Peace out, I'm gonna bounce to my crib.</textarea>
+    </div>
+    <div class="panel out">
+      <div class="label" id="outLabel">YOU, IN THE 2020s</div>
+      <div class="result" id="out" aria-live="polite"></div>
+      <div class="count" id="count"></div>
+    </div>
+  </div>
+
+  <section>
+    <h2>The glossary</h2>
+    <input class="filter" id="filter" type="search" placeholder="Search either decade..." aria-label="Filter glossary">
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>'90s</th><th>2020s</th><th>Meaning</th></tr></thead>
+        <tbody id="glossary"></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<script>
+  // from: 90s variants (first one is the display form). to: 2020s equivalents (several where more than one fits).
+  const DICT = [
+    { from: ["all that and a bag of chips", "all that"], to: ["the whole vibe", "that girl", "main character"], gloss: "impressive, the best" },
+    { from: ["as if!", "as if"], to: ["no way", "girl, bye"], gloss: "that is never happening" },
+    { from: ["da bomb", "the bomb", "the bomb dot com", "bomb diggity"], to: ["fire", "bussin", "goated"], gloss: "excellent" },
+    { from: ["phat"], to: ["fire", "hits different"], gloss: "cool, excellent (pretty hot and tempting)" },
+    { from: ["fly"], to: ["drippy", "clean"], gloss: "stylish, well dressed" },
+    { from: ["fresh"], to: ["drip", "clean"], gloss: "stylish, new and cool" },
+    { from: ["bling bling", "bling"], to: ["ice", "drip"], gloss: "flashy jewellery" },
+    { from: ["booyah", "booya"], to: ["let's gooo", "W"], gloss: "shout of triumph" },
+    { from: ["score!", "sweet!"], to: ["W", "let's go"], gloss: "that went well" },
+    { from: ["talk to the hand"], to: ["it's giving nothing", "I'm not reading all that"], gloss: "I'm not listening" },
+    { from: ["whatever", "whatevs"], to: ["ok and?", "and that's on what?"], gloss: "dismissive, I don't care" },
+    { from: ["psych!", "psych", "not!"], to: ["sike", "jk"], gloss: "just kidding, gotcha" },
+    { from: ["word up", "word"], to: ["fr fr", "facts", "say less"], gloss: "I agree, that's true" },
+    { from: ["homie", "homeboy", "homegirl", "home skillet"], to: ["bestie", "my guy", "bro"], gloss: "close friend" },
+    { from: ["boo"], to: ["pookie", "my person"], gloss: "boyfriend or girlfriend" },
+    { from: ["crib"], to: ["the spot", "my place"], gloss: "home" },
+    { from: ["bounce", "jet"], to: ["dip", "head out"], gloss: "leave" },
+    { from: ["peace out", "peace", "later"], to: ["I'm dipping", "I'm out"], gloss: "goodbye" },
+    { from: ["chillin'", "chillin", "chilling"], to: ["vibing", "doing nothing"], gloss: "relaxing" },
+    { from: ["cheesy", "corny"], to: ["cringe"], gloss: "embarrassingly unoriginal" },
+    { from: ["lame"], to: ["mid"], gloss: "boring, disappointing" },
+    { from: ["whack", "wack", "bogus"], to: ["mid", "trash"], gloss: "bad, not good" },
+    { from: ["buggin'", "buggin", "bugging"], to: ["tripping", "unhinged"], gloss: "acting irrational" },
+    { from: ["trippin'", "trippin", "tripping"], to: ["wildin'", "being delulu"], gloss: "overreacting, imagining things" },
+    { from: ["tight"], to: ["fire", "valid"], gloss: "very cool" },
+    { from: ["rad", "wicked", "gnarly"], to: ["fire", "slaps", "insane"], gloss: "amazing" },
+    { from: ["off the hook", "off the chain"], to: ["goated", "insane"], gloss: "extremely good or wild" },
+    { from: ["aight", "a'ight"], to: ["bet"], gloss: "all right, okay" },
+    { from: ["cool beans"], to: ["bet", "slay"], gloss: "sounds good" },
+    { from: ["you go girl"], to: ["slay", "ate that", "period"], gloss: "encouragement, well done" },
+    { from: ["oh snap", "oh snap!"], to: ["bruh", "nahhh"], gloss: "shock or surprise" },
+    { from: ["diss", "dissed"], to: ["throw shade", "drag"], gloss: "insult, disrespect" },
+    { from: ["scrub"], to: ["broke boy", "an L"], gloss: "a worthless, broke guy" },
+    { from: ["poser", "wannabe"], to: ["NPC", "pick me"], gloss: "fake, trying too hard" },
+    { from: ["sketchy", "shady"], to: ["sus"], gloss: "suspicious" },
+    { from: ["the man"], to: ["the GOAT", "him"], gloss: "the best at something" },
+    { from: ["eat my shorts", "take a chill pill", "chill out"], to: ["touch grass", "relax"], gloss: "calm down / go away" },
+    { from: ["like, totally", "totally"], to: ["literally", "so real"], gloss: "completely, strongly agree" },
+    { from: ["buzzkill"], to: ["vibe killer", "the ick"], gloss: "someone who ruins the fun" },
+    { from: ["gross"], to: ["the ick", "ick"], gloss: "disgusting, turned off" },
+    { from: ["crushing on", "crushin' on"], to: ["simping for", "down bad for"], gloss: "infatuated with" },
+    { from: ["going steady"], to: ["hard launched", "in a situationship"], gloss: "in a relationship" },
+    { from: ["the 411"], to: ["the tea", "the lore"], gloss: "the information, the gossip" },
+    { from: ["gossip"], to: ["tea"], gloss: "rumours, news about people" },
+    { from: ["cash money", "benjamins", "dough"], to: ["the bag", "bands"], gloss: "money" },
+    { from: ["get paid"], to: ["secure the bag"], gloss: "earn money" },
+    { from: ["props"], to: ["W", "respect"], gloss: "proper respect, credit" },
+    { from: ["big up"], to: ["shoutout"], gloss: "public praise" },
+    { from: ["macking", "mackin'", "mack on"], to: ["rizzing up", "spitting game"], gloss: "flirting" },
+    { from: ["player", "playa"], to: ["rizzler"], gloss: "smooth with romantic partners" },
+    { from: ["hottie", "fine"], to: ["baddie", "fine shyt"], gloss: "attractive person" },
+    { from: ["psyched", "stoked", "amped"], to: ["hyped", "gassed"], gloss: "excited" },
+    { from: ["jiggy"], to: ["lit", "turnt"], gloss: "stylish, having a wild time" },
+    { from: ["wassup", "what's up", "sup"], to: ["wyd", "what's good"], gloss: "greeting" },
+    { from: ["bummer", "that bites", "that sucks"], to: ["L", "pain"], gloss: "that's unfortunate" },
+    { from: ["loser"], to: ["L", "NPC"], gloss: "someone who fails" },
+    { from: ["no doy", "duh"], to: ["obviously", "no sh*t"], gloss: "that was obvious" },
+    { from: ["hella", "mad"], to: ["hella", "lowkey"], gloss: "very, a lot" },
+    { from: ["dude"], to: ["bro", "bruh"], gloss: "guy, friend" },
+    { from: ["yo"], to: ["yo", "ayo"], gloss: "hey" },
+  ];
+
+  const EXAMPLES = [
+    "Yo, that movie was da bomb! My homie thought it was whack but he's buggin'. Peace out, I'm gonna bounce to my crib.",
+    "As if! That poser is all that and a bag of chips? Talk to the hand.",
+    "She's fly, he's crushing on her, and the whole school knows the 411. Oh snap.",
+    "Word up. This party is off the hook and the DJ is the man. Booyah!",
+  ];
+
+  // TODO(human): implement pickTranslation
+  // Given an entry's `to` array (one or more 2020s equivalents) and the matched 90s term,
+  // return the single string that will replace it in the output.
+  function pickTranslation(options, matchedTerm) {
+    // TODO(human)
+  }
+
+  // ---------- matching engine ----------
+  const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const escHtml = s => s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  // Builds a lookup (lowercased term -> entry) and one alternation regex, longest phrase first.
+  function buildIndex(direction) {
+    const lookup = new Map();
+    for (const e of DICT) {
+      const terms = direction === "to2020" ? e.from : e.to;
+      const targets = direction === "to2020" ? e.to : e.from;
+      for (const t of terms) {
+        const key = t.toLowerCase();
+        if (!lookup.has(key)) lookup.set(key, { targets, gloss: e.gloss });
+      }
+    }
+    const terms = [...lookup.keys()].sort((a, b) => b.length - a.length).map(esc);
+    // Word boundaries that also work next to punctuation like "!" and "'".
+    const re = new RegExp("(?<![\\w'])(" + terms.join("|") + ")(?![\\w'])", "gi");
+    return { lookup, re };
+  }
+
+  function matchCase(source, replacement) {
+    if (source === source.toUpperCase() && source.length > 1) return replacement.toUpperCase();
+    if (source[0] === source[0].toUpperCase()) return replacement[0].toUpperCase() + replacement.slice(1);
+    return replacement;
+  }
+
+  function translate(text, index) {
+    let html = "", last = 0, hits = 0;
+    for (const m of text.matchAll(index.re)) {
+      html += escHtml(text.slice(last, m.index));
+      const entry = index.lookup.get(m[0].toLowerCase());
+      const picked = pickTranslation(entry.targets, m[0]) ?? entry.targets[0];
+      html += `<mark title="${escHtml(m[0])} = ${escHtml(entry.gloss)}">${escHtml(matchCase(m[0], picked))}</mark>`;
+      last = m.index + m[0].length;
+      hits++;
+    }
+    html += escHtml(text.slice(last));
+    return { html, hits };
+  }
+
+  // ---------- UI ----------
+  let direction = "to2020";
+  let index = buildIndex(direction);
+  const src = document.getElementById("src");
+  const out = document.getElementById("out");
+  const count = document.getElementById("count");
+  const flip = document.getElementById("flip");
+
+  function render() {
+    const { html, hits } = translate(src.value, index);
+    out.innerHTML = html;
+    count.textContent = hits ? `${hits} term${hits === 1 ? "" : "s"} translated` : (src.value.trim() ? "No slang found. Try a chip above." : "");
+  }
+
+  flip.addEventListener("click", () => {
+    direction = direction === "to2020" ? "to90" : "to2020";
+    index = buildIndex(direction);
+    const to2020 = direction === "to2020";
+    flip.innerHTML = to2020 ? "'90s &rarr; 2020s" : "2020s &rarr; '90s";
+    document.getElementById("inLabel").textContent = to2020 ? "YOU, IN THE '90s" : "YOU, IN THE 2020s";
+    document.getElementById("outLabel").textContent = to2020 ? "YOU, IN THE 2020s" : "YOU, IN THE '90s";
+    // Carry the translation back across as the new input, so flipping round-trips the text.
+    src.value = out.textContent || src.value;
+    render();
+  });
+
+  src.addEventListener("input", render);
+
+  const chips = document.getElementById("chips");
+  EXAMPLES.forEach(ex => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "chip"; b.textContent = ex.split(/[.!?]/)[0] + "...";
+    b.addEventListener("click", () => { src.value = ex; render(); });
+    chips.appendChild(b);
+  });
+
+  const glossary = document.getElementById("glossary");
+  function renderGlossary(q) {
+    q = (q || "").toLowerCase();
+    glossary.innerHTML = DICT
+      .filter(e => !q || [...e.from, ...e.to, e.gloss].some(s => s.toLowerCase().includes(q)))
+      .map(e => `<tr><td class="t90">${escHtml(e.from[0])}</td><td class="t20">${escHtml(e.to.join(" / "))}</td><td class="gloss">${escHtml(e.gloss)}</td></tr>`)
+      .join("") || `<tr><td colspan="3" class="gloss">Nothing matches that.</td></tr>`;
+  }
+  document.getElementById("filter").addEventListener("input", e => renderGlossary(e.target.value));
+
+  renderGlossary("");
+  render();
+</script>
+
+</body>
+</html>
