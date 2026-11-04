@@ -204,11 +204,12 @@
     "Word up. This party is off the hook and the DJ is the man. Booyah!",
   ];
 
-  // TODO(human): implement pickTranslation
-  // Given an entry's `to` array (one or more 2020s equivalents) and the matched 90s term,
-  // return the single string that will replace it in the output.
+  // Picks which equivalent replaces a matched term. Stable hash of the word: the same word
+  // always maps to the same option, different words get variety.
   function pickTranslation(options, matchedTerm) {
-    // TODO(human)
+    let h = 0;
+    for (const ch of matchedTerm.toLowerCase()) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    return options[h % options.length];
   }
 
   // ---------- matching engine ----------
